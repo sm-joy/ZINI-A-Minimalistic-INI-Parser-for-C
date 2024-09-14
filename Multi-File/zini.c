@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -84,7 +85,7 @@ bool ZINI_Save(INIFILE* iniFile, const char* filename) {
 
 Section* ZINI_AddSection(INIFILE* iniFile, const char* section) {
     if (!iniFile || !section) {
-        fprintf(stderr, "ZINIFIle or Sections is NULL!\n");
+        fprintf(stderr, "INIFIle or Sections is NULL!\n");
         return NULL;
     }
     Section* newptr = (Section*)realloc(iniFile->sections, (iniFile->sectionCount+1) * sizeof(Section));
@@ -105,7 +106,7 @@ Section* ZINI_AddSection(INIFILE* iniFile, const char* section) {
 
 Pair* ZINI_AddPair(Section* section, const char* key, const char* value) { // didnt add code to check if it was modified
     if (!section || !key || !value) {
-        fprintf(stderr, "ZINIFIle or Sections is NULL!\n");
+        fprintf(stderr, "INIFIle or Sections is NULL!\n");
         return NULL;
     }
     Pair* newptr = realloc(section->pairs, (section->pairCount + 1) * sizeof(Pair));

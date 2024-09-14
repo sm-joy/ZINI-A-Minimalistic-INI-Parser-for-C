@@ -1,7 +1,5 @@
-#ifndef ZZINI_PARSER_H
-#define ZZINI_PARSER_H
-
-#include <stdbool.h>
+#ifndef ZINI_PARSER_H
+#define ZINI_PARSER_H
 
 #define MAX_SECTION_LENGTH 128
 #define MAX_KEY_LENGTH 128
@@ -107,4 +105,4 @@ void ZINI_Clean(INIFILE *iniFile);
 
 
 
-#endif // ZZINI_PARSER_H
+#endif // ZINI_PARSER_H

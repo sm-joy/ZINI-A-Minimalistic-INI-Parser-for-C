@@ -70,14 +70,19 @@ bool ZINI_Save(INIFILE* iniFile, const char* filename) {
         return false;
     }
 
-    for (int i = 0; i < iniFile->sectionCount; i++) {
-        const Section* section = &iniFile->sections[i];
-        fprintf(file, "[%s]\n", section->section);
-        for (int j = 0; j < section->pairCount; j++) {
-            const Pair* pair = &section->pairs[j];
-            fprintf(file, "%s=%s\n", pair->key, pair->value);
-        }
-    }
+    // for (int i = 0; i < iniFile->sectionCount; i++) {
+    //     const Section* section = &iniFile->sections[i];
+    //     fprintf(file, "[%s]\n", section->section);
+    //     for (int j = 0; j < section->pairCount; j++) {
+    //         const Pair* pair = &section->pairs[j];
+    //         if (pair->key[0] != '\0' || pair->value[0] != '\0') {
+    //             fprintf(file, "%s=%s\n", pair->key, pair->value);
+    //         }
+    //     }
+    //     fprintf(file, "\n");
+    // }
+
+    ZINI_Print(iniFile, file);
     iniFile->isModified = false;
     fclose(file);
     return true;
@@ -139,7 +144,7 @@ Section* ZINI_FindSection(INIFILE* iniFile, const char* section) {
     return NULL;
 }
 
-const char* ZINI_FindValue(Section* section, const char* key) {
+const char* ZINI_GetValue(Section* section, const char* key) {
     if (!section || !key) {
         fprintf(stderr, "Section or key is NULL!\n");
         return NULL;
@@ -153,14 +158,14 @@ const char* ZINI_FindValue(Section* section, const char* key) {
     return NULL;
 }
 
-const char* ZINI_FindValueEx(INIFILE* iniFile, const char* key) {
-    if (!iniFile || !key) {
-        fprintf(stderr, "INI file or key is NULL!\n");
+const char* ZINI_GetValueEx(INIFILE* iniFile, const char* section, const char* key) {
+    if (!iniFile || !key || !section) {
+        fprintf(stderr, "INI file or key or section is NULL!\n");
         return NULL;
     }
 
     for (int i = 0; i < iniFile->sectionCount; i++) {
-        const char* value = ZINI_FindValue(&iniFile->sections[i], key);
+        const char* value = ZINI_GetValue(ZINI_FindSection(iniFile, section), key);
         if (value) return value;
     }
     
@@ -170,11 +175,115 @@ const char* ZINI_FindValueEx(INIFILE* iniFile, const char* key) {
 
 void ZINI_Clean(INIFILE *iniFile) {
     if (!iniFile) return;
-    if (!iniFile->isModified) printf("INI file was modified but not saved!\n");
+    if (iniFile->isModified) printf("INI file was modified but not saved!\n");
     for (int i = 0; i < iniFile->sectionCount; ++i) {
         free(iniFile->sections[i].pairs);
     }
     free(iniFile->sections);
     iniFile->sections = NULL;
     iniFile->sectionCount = 0;
+}
+
+void ZINI_RemovePair(Section* section, const char* key) {
+    if (!section || !key) {
+        fprintf(stderr, "Section or key is NULL!\n");
+        return;
+    }
+
+    for (int i = 0; i < section->pairCount; i++) {
+        if (strcmp(section->pairs[i].key, key) == 0) {
+            section->pairs[i].key[0] = '\0';
+            section->pairs[i].value[0] = '\0';
+        }
+    }
+}
+
+void ZINI_RemovePairEx(INIFILE* iniFile, const char* section, const char* key) {
+    if (!iniFile || !key || !section) {
+        fprintf(stderr, "INI file or key or section is NULL!\n");
+        return;
+    }
+    ZINI_RemovePair(ZINI_FindSection(iniFile, section), key);
+}
+
+void ZINI_SetValue(Section* section, const char* key, const char* newValue) {
+    if (!section || !key) {
+        fprintf(stderr, "Section or key is NULL!\n");
+        return;
+    }
+    for (int i = 0; i < section->pairCount; i++) {
+        if (strcmp(section->pairs[i].key, key) == 0) {
+            strncpy(section->pairs[i].value, newValue, MAX_VALUE_LENGTH-1);
+            section->pairs[i].value[MAX_VALUE_LENGTH - 1] = '\0';
+        }
+    }
+}
+
+void ZINI_SetValueEx(INIFILE* iniFile, const char* section, const char* key, const char* newValue) {
+    if (!iniFile || !key || !section) {
+        fprintf(stderr, "INI file or key or section is NULL!\n");
+        return;
+    }
+
+    ZINI_SetValue(ZINI_FindSection(iniFile, section), key, newValue);
+}
+
+void ZINI_RemoveSection(INIFILE* iniFile, const char* section) {
+    if (!iniFile || !section) {
+        fprintf(stderr, "INI file or section is NULL!\n");
+        return;
+    }
+
+   Section* sec = ZINI_FindSection(iniFile, section);
+    if (!sec) {
+        fprintf(stderr, "Section not found!\n");
+        return;
+    }
+   free(sec->pairs);
+   sec->pairCount = 0;
+   sec->section[0] = '\0';
+}
+
+bool ZINI_SectionExists(INIFILE* iniFile, const char* section) {
+    if (!iniFile || !section) {
+        fprintf(stderr, "INI file or section is NULL!\n");
+        return false;
+    }
+
+    if (ZINI_FindSection(iniFile, section)) return true;
+
+    return false;
+}
+
+bool ZINI_KeyExists(Section* section, const char* key) {
+    if (!section || !key) {
+        fprintf(stderr, "Section or key is NULL!\n");
+        return false;
+    }
+    for (int i = 0; i < section->pairCount; i++) {
+        if (strcmp(section->pairs[i].key, key) == 0) return true;
+    }
+
+    return false;
+}
+
+void ZINI_Print(INIFILE* iniFile, FILE* stream) {
+    if (!stream || !iniFile) {
+        fprintf(stderr, "INI File or Stream is NULL!\n");
+        return;
+    }
+
+    for (int i = 0; i < iniFile->sectionCount; i++) {
+        const Section* section = &iniFile->sections[i];
+        if (section->section[0] != '\0') {
+            fprintf(stream, "[%s]\n", section->section);
+            for (int j = 0; j < section->pairCount; j++) {
+                const Pair* pair = &section->pairs[j];
+                if (pair->key[0] != '\0' || pair->value[0] != '\0') {
+                    fprintf(stream, "%s=%s\n", pair->key, pair->value);
+                }
+            }
+            fprintf(stream, "\n");
+        }
+    }
 }

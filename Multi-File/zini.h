@@ -1,10 +1,38 @@
 #ifndef ZINI_PARSER_H
 #define ZINI_PARSER_H
 
-#define MAX_SECTION_LENGTH 128
-#define MAX_KEY_LENGTH 128
-#define MAX_VALUE_LENGTH 128
+#include <stdbool.h>
+#include <stdio.h>
+
+
+#ifndef MAX_SECTION_LENGTH
+    #define MAX_SECTION_LENGTH 128
+#endif // MAX_SECTION_LENGTH
+
+#ifndef MAX_KEY_LENGTH
+    #define MAX_KEY_LENGTH 128
+#endif // MAX_KEY_LENGTH
+
+#ifndef MAX_VALUE_LENGTH
+    #define MAX_VALUE_LENGTH 128
+#endif // MAX_VALUE_LENGTH
+
 #define MAX_LINE_LENGTH (MAX_KEY_LENGTH + MAX_VALUE_LENGTH + 2)
+
+#ifndef MAX_DOUBLE_PRECISION
+    #define MAX_DOUBLE_PRECISION 2
+#elif MAX_DOUBLE_PRECISION > 15
+    #undef MAX_DOUBLE_PRECISION
+    #define MAX_DOUBLE_PRECISION 15
+#endif // MAX_DOUBLE_PRECISION
+
+#ifndef MAX_FLOAT_PRECISION
+    #define MAX_FLOAT_PRECISION 2
+#elif MAX_FLOAT_PRECISION > 7
+    #undef MAX_FLOAT_PRECISION
+    #define MAX_FLOAT_PRECISION 7
+#endif // MAX_FLOAT_PRECISION
+
 
 
 typedef enum {
@@ -15,6 +43,17 @@ typedef enum {
     ZINI_INVALID_INPUT,
     ZINI_FILE_ERROR
 } ZINI_Status; // i'll add it later
+
+typedef enum {
+    ZINI_STR,
+    ZINI_INT,
+    ZINI_LINT,
+    ZINI_LLINT,
+    ZINI_UINT,
+    ZINI_FLOAT,
+    ZINI_DOUBLE,
+    ZINI_BOOL
+} ZINI_DType;
 
 
 /**
@@ -41,6 +80,8 @@ typedef struct {
     Section* sections;    /**< Array of sections in the INI file */
     size_t sectionCount;     /**< Number of sections in the INI file */
     bool isModified;      /**< Flag indicating if the INI file has been modified */
+
+    int maxSectionLength;
 } INIFILE;
 
 
@@ -83,6 +124,12 @@ Section* ZINI_AddSection(INIFILE* iniFile, const char* section);
  * @return Pointer to the newly added Pair structure, or NULL if an error occurred.
  */
 Pair* ZINI_AddPair(Section* section, const char* key, const char* value);
+
+Pair* ZINI_AddPairVT(Section* section, const char* key, void* value, ZINI_DType type);
+
+Pair* ZINI_AddPairEx(INIFILE* iniFile, const char* section, const char* key, const char* value);
+
+Pair* ZINI_AddPairVTEx(INIFILE* iniFile, const char* section, const char* key, void* value, ZINI_DType type);
 
 /**
  * Finds a section in the INIFILE structure.
